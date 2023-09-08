@@ -7,13 +7,21 @@ npm i ua-client-hints-js
 
 ## Methods
 
-`setValuesFromHeaders(headers:object): UAClientHints`
+```js
+setValuesFromHeaders(headers:object): UAClientHints
+```
 
-`setValues(object): UAClientHints`
+```js
+setValues(object): UAClientHints
+```
 
-`getValues([fields:string[]]): object`
+```js
+getValues([fields:string[]]): object
+```
 
-`getValuesAsHeaders([fields:string[]]): object`
+```js
+getValuesAsHeaders([fields:string[]]): object
+```
 
 ## Code Example
 
