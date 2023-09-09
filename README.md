@@ -12,7 +12,11 @@ setValuesFromHeaders(headers:object): UAClientHints
 ```
 
 ```js
-setValues(object): UAClientHints
+setValuesFromUAParser(iresult:object): UAClientHints
+```
+
+```js
+setValues(data:object): UAClientHints
 ```
 
 ```js
@@ -138,6 +142,9 @@ console.log(headersData2);
 ### From [UAParser.js](https://github.com/faisalman/ua-parser-js)
 
 ```js
+import { UAClientHints } from 'ua-client-hints-js';
+import { UAParser } from 'ua-parser-js';
+
 const ua = 'Mozilla/5.0 (Mobile; Windows Phone 8.1; Android 4.0; ARM; Trident/7.0; Touch; rv:11.0; IEMobile/11.0; NOKIA; Lumia 635) like iPhone OS 7_0_3 Mac OS X AppleWebKit/537 (KHTML, like Gecko) Mobile Safari/537';
 const uap = new UAParser(ua).getResult();
 
@@ -171,7 +178,7 @@ console.log(chData);
 };
 */
 
-const chHeaders = ch.getValues();
+const chHeaders = ch.getValuesAsHeaders();
 console.log(chHeaders);
 /*
 {
