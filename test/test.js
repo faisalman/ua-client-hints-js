@@ -1,5 +1,6 @@
 const { UAClientHints } = require('../dist/cjs');
 const assert = require('assert');
+const UAParser = require('ua-parser-js');
 
 describe('UAClientHints', () => {
     describe('Assign client hints values from UA-CH headers into a JS object', () => {
@@ -20,7 +21,7 @@ describe('UAClientHints', () => {
         const ch = new UAClientHints();
         ch.setValuesFromHeaders(req.headers);
         
-        it('parse values from header', () => {
+        it('Parse values from header', () => {
             const chData1 = ch.getValues(['architecture', 'bitness', 'mobile']);
 
             assert.deepEqual(chData1, {
@@ -71,7 +72,7 @@ describe('UAClientHints', () => {
             });
         });
         
-        it('serialize values to header', () => {
+        it('Serialize values to header', () => {
 
             ch.setValues({
                 'wow64' : true,
@@ -97,6 +98,43 @@ describe('UAClientHints', () => {
                 'Sec-CH-UA' : '"Chromium"; v="93", "Google Chrome"; v="93", " Not;A Brand"; v="99"',
                 'Sec-CH-UA-Mobile' : '?1',
                 'Sec-CH-UA-Model' : '"Pixel 99"'
+            });
+        });
+    });
+
+    describe('Rearrange data from UAParser getResult() into a client hints structure', () => {
+
+        it('Map values from UAParser', () => {
+
+            const ua = 'Mozilla/5.0 (Mobile; Windows Phone 8.1; Android 4.0; ARM; Trident/7.0; Touch; rv:11.0; IEMobile/11.0; NOKIA; Lumia 635) like iPhone OS 7_0_3 Mac OS X AppleWebKit/537 (KHTML, like Gecko) Mobile Safari/537';
+            const uap = UAParser(ua);
+            const ch2 = new UAClientHints();
+            ch2.setValuesFromUAParser(uap);            
+            const ch2Data = ch2.getValues();
+            assert.deepEqual(ch2Data, {
+                architecture: null,
+                bitness: null,
+                brands: [ { brand: 'IEMobile', version: '11.0' } ],
+                formFactor: [ 'Mobile' ],
+                fullVersionList: [ { brand: 'IEMobile', version: '11.0' } ],
+                mobile: true,
+                model: 'Lumia 635',
+                platform: 'Windows Phone',
+                platformVersion: '8.1',
+                wow64: null
+            });
+            const headersData2 = ch2.getValuesAsHeaders();
+            assert.deepEqual(headersData2, {
+                'Sec-CH-UA-Arch': '',
+                'Sec-CH-UA-Bitness': '',
+                'Sec-CH-UA': '"IEMobile"; v="11.0"',
+                'Sec-CH-UA-Form-Factor': '"Mobile"',
+                'Sec-CH-UA-Full-Version-List': '"IEMobile"; v="11.0"',
+                'Sec-CH-UA-Mobile': '?1',
+                'Sec-CH-UA-Model': '"Lumia 635"',
+                'Sec-CH-UA-Platform': '"Windows Phone"',
+                'Sec-CH-UA-Platform-Version': '"8.1"',
+                'Sec-CH-UA-WOW64': ''
             });
         });
     });

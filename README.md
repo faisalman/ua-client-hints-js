@@ -25,6 +25,8 @@ getValuesAsHeaders([fields:string[]]): object
 
 ## Code Example
 
+### From HTTP Headers
+
 ```js
 import { UAClientHints } from 'ua-client-hints-js';
 
@@ -130,6 +132,60 @@ console.log(headersData2);
         'Sec-CH-UA-Mobile' : '?1',
         'Sec-CH-UA-Model' : '"Pixel 99"'
     };
+*/
+```
+
+### From [UAParser.js](https://github.com/faisalman/ua-parser-js)
+
+```js
+const ua = 'Mozilla/5.0 (Mobile; Windows Phone 8.1; Android 4.0; ARM; Trident/7.0; Touch; rv:11.0; IEMobile/11.0; NOKIA; Lumia 635) like iPhone OS 7_0_3 Mac OS X AppleWebKit/537 (KHTML, like Gecko) Mobile Safari/537';
+const uap = new UAParser(ua).getResult();
+
+const ch = new UAClientHints();
+ch.setValuesFromUAParser(uap);
+
+const chData = ch.getValues();
+console.log(chData);
+/*
+{
+    architecture: null,
+    bitness: null,
+    brands: [
+        {
+            brand: 'IEMobile', 
+            version: '11.0'
+        } 
+    ],
+    formFactor: ['Mobile'],
+    fullVersionList: [
+        { 
+            brand: 'IEMobile', 
+            version: '11.0'
+        }
+    ],
+    mobile: true,
+    model: 'Lumia 635',
+    platform: 'Windows Phone',
+    platformVersion: '8.1',
+    wow64: null
+};
+*/
+
+const chHeaders = ch.getValues();
+console.log(chHeaders);
+/*
+{
+    'Sec-CH-UA-Arch': '',
+    'Sec-CH-UA-Bitness': '',
+    'Sec-CH-UA': '"IEMobile"; v="11.0"',
+    'Sec-CH-UA-Form-Factor': '"Mobile"',
+    'Sec-CH-UA-Full-Version-List': '"IEMobile"; v="11.0"',
+    'Sec-CH-UA-Mobile': '?1',
+    'Sec-CH-UA-Model': '"Lumia 635"',
+    'Sec-CH-UA-Platform': '"Windows Phone"',
+    'Sec-CH-UA-Platform-Version': '"8.1"',
+    'Sec-CH-UA-WOW64': ''
+}
 */
 ```
 

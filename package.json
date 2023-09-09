@@ -1,7 +1,7 @@
 {
     "title": "UAClientHints.js",
     "name": "ua-client-hints-js",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "author": "Faisal Salman <f@faisalman.com>",
     "description": "Parse & serialize user-agent client hints (UA-CH) HTTP headers",
     "type": "commonjs",
@@ -66,7 +66,9 @@
         }
     ],
     "devDependencies": {
+        "@types/ua-parser-js": "^0.7.37",
         "mocha": "^10.2.0",
-        "typescript": "^5.2.2"
+        "typescript": "^5.2.2",
+        "ua-parser-js": "^1.0.35"
     }
 }

@@ -1,16 +1,16 @@
 ///////////////////////////////////////////////////////////////////
-/*! UAClientHints.js
+/*! UAClientHints.js 0.1.1
     Parse & serialize user-agent client hints (UA-CH) HTTP headers
     https://github.com/faisalman/ua-client-hints-js
     Author: Faisal Salman <f@faisalman.com>
     MIT License */
 ///////////////////////////////////////////////////////////////////
 
-const FIELD_TYPE = {
-    Boolean : 'sf-boolean',
-    List    : 'sf-list',
-    String  : 'sf-string'
-} as const;
+enum FIELD_TYPE {
+    Boolean = 'sf-boolean',
+    List    = 'sf-list',
+    String  = 'sf-string'
+};
 
 const UACH_MAP = {
     architecture : {
@@ -66,7 +66,7 @@ type UACHHeaderField = Lowercase<typeof UACH_MAP[keyof typeof UACH_MAP]['field']
 
 export class UAClientHints {
 
-    private uaCHData: Record<UACHDataField, UACHDataType> = {
+    private data: Record<UACHDataField, UACHDataType> = {
         architecture : null,
         bitness: null,
         brands: null,
@@ -87,8 +87,8 @@ export class UAClientHints {
         let values: any = {};
         let props = fields || Object.keys(UACH_MAP);
         for (const prop of props) {
-            if (this.uaCHData.hasOwnProperty(prop)) {
-                values[prop] = this.uaCHData[<UACHDataField>prop];
+            if (this.data.hasOwnProperty(prop)) {
+                values[prop] = this.data[<UACHDataField>prop];
             }
         }
         return values;
@@ -98,9 +98,9 @@ export class UAClientHints {
         let values: any = {};
         let props = fields || Object.keys(UACH_MAP);
         for (const prop of props) {
-            if (this.uaCHData.hasOwnProperty(prop)) {
+            if (this.data.hasOwnProperty(prop)) {
                 const { field, type } = UACH_MAP[<UACHDataField>prop];
-                values[field] = this.serializeHeader(this.uaCHData[<UACHDataField>prop], type);
+                values[field] = this.serializeHeader(this.data[<UACHDataField>prop], type);
             }
         }
         return values;
@@ -108,12 +108,46 @@ export class UAClientHints {
 
     setValues(values?: Partial<Record<string, UACHDataType>>): UAClientHints {
         for (const key in values) {
-            if (this.uaCHData.hasOwnProperty(key)) {
+            if (this.data.hasOwnProperty(key)) {
                 const val = values[key];
                 if (this.isValidType(val, UACH_MAP[<UACHDataField>key].type)) {
-                    this.uaCHData[<UACHDataField>key] = val; 
+                    this.data[<UACHDataField>key] = val; 
                 }
             };
+        }
+        return this;
+    }
+
+    setValuesFromUAParser(uap: UAParser.IResult): UAClientHints {
+        const arch = /(x86|arm).*(64)/.exec(uap.cpu.architecture || '');
+        if (arch) {
+            this.data.architecture = arch[1];
+            if (arch[2] == '64') {
+                this.data.bitness = '64';
+            }
+        }
+        switch (uap.device.type) {
+            case 'mobile':
+                this.data.formFactor = ['Mobile'];
+                this.data.mobile = true;
+                break;
+            case 'tablet':
+                this.data.formFactor = ['Tablet'];
+                break;
+        }
+        if (uap.device.model) {
+            this.data.model = uap.device.model;
+        }
+        if (uap.os.name) {
+            this.data.platform = uap.os.name;
+            if (uap.os.version) {
+                this.data.platformVersion = uap.os.version;
+            }
+        }
+        if (uap.browser.name) {
+            const brands = [{ brand : uap.browser.name, version : uap.browser.version || '' }];
+            this.data.brands = brands;
+            this.data.fullVersionList = brands;
         }
         return this;
     }
@@ -124,7 +158,7 @@ export class UAClientHints {
                 const { field, type } = UACH_MAP[<UACHDataField>key];
                 const headerField = <UACHHeaderField>field.toLowerCase();
                 if (headers.hasOwnProperty(headerField)) {
-                    this.uaCHData[<UACHDataField>key] = this.parseHeader(headers[headerField], type);
+                    this.data[<UACHDataField>key] = this.parseHeader(headers[headerField], type);
                 }
             }
         }

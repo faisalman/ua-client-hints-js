@@ -1,13 +1,15 @@
-/*! UAClientHints.js
+/*! UAClientHints.js 0.1.1
     Parse & serialize user-agent client hints (UA-CH) HTTP headers
     https://github.com/faisalman/ua-client-hints-js
     Author: Faisal Salman <f@faisalman.com>
     MIT License */
-const FIELD_TYPE = {
-    Boolean: 'sf-boolean',
-    List: 'sf-list',
-    String: 'sf-string'
-};
+var FIELD_TYPE;
+(function (FIELD_TYPE) {
+    FIELD_TYPE["Boolean"] = "sf-boolean";
+    FIELD_TYPE["List"] = "sf-list";
+    FIELD_TYPE["String"] = "sf-string";
+})(FIELD_TYPE || (FIELD_TYPE = {}));
+;
 const UACH_MAP = {
     architecture: {
         field: 'Sec-CH-UA-Arch',
@@ -52,7 +54,7 @@ const UACH_MAP = {
 };
 export class UAClientHints {
     constructor() {
-        this.uaCHData = {
+        this.data = {
             architecture: null,
             bitness: null,
             brands: null,
@@ -70,8 +72,8 @@ export class UAClientHints {
         let values = {};
         let props = fields || Object.keys(UACH_MAP);
         for (const prop of props) {
-            if (this.uaCHData.hasOwnProperty(prop)) {
-                values[prop] = this.uaCHData[prop];
+            if (this.data.hasOwnProperty(prop)) {
+                values[prop] = this.data[prop];
             }
         }
         return values;
@@ -80,22 +82,55 @@ export class UAClientHints {
         let values = {};
         let props = fields || Object.keys(UACH_MAP);
         for (const prop of props) {
-            if (this.uaCHData.hasOwnProperty(prop)) {
+            if (this.data.hasOwnProperty(prop)) {
                 const { field, type } = UACH_MAP[prop];
-                values[field] = this.serializeHeader(this.uaCHData[prop], type);
+                values[field] = this.serializeHeader(this.data[prop], type);
             }
         }
         return values;
     }
     setValues(values) {
         for (const key in values) {
-            if (this.uaCHData.hasOwnProperty(key)) {
+            if (this.data.hasOwnProperty(key)) {
                 const val = values[key];
                 if (this.isValidType(val, UACH_MAP[key].type)) {
-                    this.uaCHData[key] = val;
+                    this.data[key] = val;
                 }
             }
             ;
+        }
+        return this;
+    }
+    setValuesFromUAParser(uap) {
+        const arch = /(x86|arm).*(64)/.exec(uap.cpu.architecture || '');
+        if (arch) {
+            this.data.architecture = arch[1];
+            if (arch[2] == '64') {
+                this.data.bitness = '64';
+            }
+        }
+        switch (uap.device.type) {
+            case 'mobile':
+                this.data.formFactor = ['Mobile'];
+                this.data.mobile = true;
+                break;
+            case 'tablet':
+                this.data.formFactor = ['Tablet'];
+                break;
+        }
+        if (uap.device.model) {
+            this.data.model = uap.device.model;
+        }
+        if (uap.os.name) {
+            this.data.platform = uap.os.name;
+            if (uap.os.version) {
+                this.data.platformVersion = uap.os.version;
+            }
+        }
+        if (uap.browser.name) {
+            const brands = [{ brand: uap.browser.name, version: uap.browser.version || '' }];
+            this.data.brands = brands;
+            this.data.fullVersionList = brands;
         }
         return this;
     }
@@ -105,7 +140,7 @@ export class UAClientHints {
                 const { field, type } = UACH_MAP[key];
                 const headerField = field.toLowerCase();
                 if (headers.hasOwnProperty(headerField)) {
-                    this.uaCHData[key] = this.parseHeader(headers[headerField], type);
+                    this.data[key] = this.parseHeader(headers[headerField], type);
                 }
             }
         }
