@@ -1,18 +1,20 @@
 ///////////////////////////////////////////////////////////////////
-/*! UAClientHints.js 0.1.1
+/*! UAClientHints.js 0.1.2
     Parse & serialize user-agent client hints (UA-CH) HTTP headers
     https://github.com/faisalman/ua-client-hints-js
     Author: Faisal Salman <f@faisalman.com>
     MIT License */
 ///////////////////////////////////////////////////////////////////
 
-enum FIELD_TYPE {
+/// <reference types="user-agent-data-types" />
+
+export enum FIELD_TYPE {
     Boolean = 'sf-boolean',
     List    = 'sf-list',
     String  = 'sf-string'
 };
 
-const UACH_MAP = {
+export const UACH_MAP = {
     architecture : {
         field   : 'Sec-CH-UA-Arch', 
         type    : FIELD_TYPE.String
@@ -55,40 +57,30 @@ const UACH_MAP = {
     }
 } as const;
 
-type UACHBrowser = {
-    brand: string | null,
-    version: string | null
-};
-type UACHDataType = boolean | string | string[] | UACHBrowser[] | null | undefined;
-type UACHDataField = keyof typeof UACH_MAP;
-type UACHHeaderType = typeof FIELD_TYPE[keyof typeof FIELD_TYPE];
-type UACHHeaderField = Lowercase<typeof UACH_MAP[keyof typeof UACH_MAP]['field']>;
+export type UACHDataType = boolean | string | string[] | NavigatorUABrandVersion[] | null | undefined;
+export type UACHDataField = keyof typeof UACH_MAP;
+export type UACHHeaderType = typeof FIELD_TYPE[keyof typeof FIELD_TYPE];
+export type UACHHeaderField = Lowercase<typeof UACH_MAP[keyof typeof UACH_MAP]['field']>;
 
 export class UAClientHints {
 
-    private data: Record<UACHDataField, UACHDataType> = {
-        architecture : null,
-        bitness: null,
-        brands: null,
-        formFactor: null,
-        fullVersionList: null,
-        mobile: null,
-        model: null,
-        platform: null,
-        platformVersion: null,
-        wow64: null
-    };
+    private architecture?: string = undefined;
+    private bitness?: string = undefined;
+    private brands?: NavigatorUABrandVersion[] = undefined;
+    private formFactor?: string[] = undefined;
+    private fullVersionList?: NavigatorUABrandVersion[] = undefined;
+    private mobile?: boolean = undefined;
+    private model?: string = undefined;
+    private platform?: string = undefined;
+    private platformVersion?: string = undefined;
+    private wow64?: boolean = undefined;
 
-    constructor () {
-        return this;
-    }
-
-    getValues(fields?: UACHDataField[]): Partial<Record<string, UACHDataType>> {
+    getValues(fields?: UACHDataField[]): UADataValues {
         let values: any = {};
         let props = fields || Object.keys(UACH_MAP);
         for (const prop of props) {
-            if (this.data.hasOwnProperty(prop)) {
-                values[prop] = this.data[<UACHDataField>prop];
+            if (this.hasOwnProperty(prop)) {
+                values[prop] = this[<UACHDataField>prop];
             }
         }
         return values;
@@ -98,20 +90,20 @@ export class UAClientHints {
         let values: any = {};
         let props = fields || Object.keys(UACH_MAP);
         for (const prop of props) {
-            if (this.data.hasOwnProperty(prop)) {
+            if (this.hasOwnProperty(prop)) {
                 const { field, type } = UACH_MAP[<UACHDataField>prop];
-                values[field] = this.serializeHeader(this.data[<UACHDataField>prop], type);
+                values[field] = this.serializeHeader(this[<UACHDataField>prop], type);
             }
         }
         return values;
     }
 
-    setValues(values?: Partial<Record<string, UACHDataType>>): UAClientHints {
+    setValues(values?: UADataValues): UAClientHints {
         for (const key in values) {
-            if (this.data.hasOwnProperty(key)) {
-                const val = values[key];
+            if (this.hasOwnProperty(key)) {
+                const val = values[<UACHDataField>key];
                 if (this.isValidType(val, UACH_MAP[<UACHDataField>key].type)) {
-                    this.data[<UACHDataField>key] = val; 
+                    this[<UACHDataField>key] = val as any; 
                 }
             };
         }
@@ -121,44 +113,44 @@ export class UAClientHints {
     setValuesFromUAParser(uap: UAParser.IResult): UAClientHints {
         const arch = /(x86|arm).*(64)/.exec(uap.cpu.architecture || '');
         if (arch) {
-            this.data.architecture = arch[1];
+            this.architecture = arch[1];
             if (arch[2] == '64') {
-                this.data.bitness = '64';
+                this.bitness = '64';
             }
         }
         switch (uap.device.type) {
             case 'mobile':
-                this.data.formFactor = ['Mobile'];
-                this.data.mobile = true;
+                this.formFactor = ['Mobile'];
+                this.mobile = true;
                 break;
             case 'tablet':
-                this.data.formFactor = ['Tablet'];
+                this.formFactor = ['Tablet'];
                 break;
         }
         if (uap.device.model) {
-            this.data.model = uap.device.model;
+            this.model = uap.device.model;
         }
         if (uap.os.name) {
-            this.data.platform = uap.os.name;
+            this.platform = uap.os.name;
             if (uap.os.version) {
-                this.data.platformVersion = uap.os.version;
+                this.platformVersion = uap.os.version;
             }
         }
         if (uap.browser.name) {
             const brands = [{ brand : uap.browser.name, version : uap.browser.version || '' }];
-            this.data.brands = brands;
-            this.data.fullVersionList = brands;
+            this.brands = brands;
+            this.fullVersionList = brands;
         }
         return this;
     }
 
-    setValuesFromHeaders(headers: Partial<Record<UACHHeaderField, string>>): UAClientHints {
+    setValuesFromHeaders(headers: Record<string, string>): UAClientHints {
         if(Object.keys(headers).some(prop => prop.startsWith('sec-ch-ua'))) {
             for (const key in UACH_MAP) {
                 const { field, type } = UACH_MAP[<UACHDataField>key];
                 const headerField = <UACHHeaderField>field.toLowerCase();
                 if (headers.hasOwnProperty(headerField)) {
-                    this.data[<UACHDataField>key] = this.parseHeader(headers[headerField], type);
+                    this[<UACHDataField>key] = this.parseHeader(headers[headerField], type) as any;
                 }
             }
         }
@@ -180,8 +172,8 @@ export class UAClientHints {
                             .map(brands => {
                                 const match = /\\?\"(.+)?\\?\".+\\?\"(.+)?\\?\"/.exec(brands)
                                 return {
-                                    brand : match ? match[1] : null,
-                                    version : match ? match[2] : null
+                                    brand : match ? match[1] : '',
+                                    version : match ? match[2] : ''
                                 };
                 });
             case FIELD_TYPE.String:
@@ -200,7 +192,7 @@ export class UAClientHints {
                 return data ? '?1' : '?0';
             case FIELD_TYPE.List:
                 if (!(<any[]>data).some(val => typeof val === 'string')) {
-                    return (<UACHBrowser[]>data).map(browser => `"${browser.brand}"; v="${browser.version}"`).join(', ');
+                    return (<NavigatorUABrandVersion[]>data).map(browser => `"${browser.brand}"; v="${browser.version}"`).join(', ');
                 }
                 return (<string[]>data).join(', ');
             case FIELD_TYPE.String:

@@ -1,15 +1,16 @@
-/*! UAClientHints.js 0.1.1
+/*! UAClientHints.js 0.1.2
     Parse & serialize user-agent client hints (UA-CH) HTTP headers
     https://github.com/faisalman/ua-client-hints-js
     Author: Faisal Salman <f@faisalman.com>
     MIT License */
+/// <reference types="user-agent-data-types" />
 /// <reference types="ua-parser-js" />
-declare enum FIELD_TYPE {
+export declare enum FIELD_TYPE {
     Boolean = "sf-boolean",
     List = "sf-list",
     String = "sf-string"
 }
-declare const UACH_MAP: {
+export declare const UACH_MAP: {
     readonly architecture: {
         readonly field: "Sec-CH-UA-Arch";
         readonly type: FIELD_TYPE.String;
@@ -51,23 +52,27 @@ declare const UACH_MAP: {
         readonly type: FIELD_TYPE.Boolean;
     };
 };
-type UACHBrowser = {
-    brand: string | null;
-    version: string | null;
-};
-type UACHDataType = boolean | string | string[] | UACHBrowser[] | null | undefined;
-type UACHDataField = keyof typeof UACH_MAP;
-type UACHHeaderField = Lowercase<typeof UACH_MAP[keyof typeof UACH_MAP]['field']>;
+export type UACHDataType = boolean | string | string[] | NavigatorUABrandVersion[] | null | undefined;
+export type UACHDataField = keyof typeof UACH_MAP;
+export type UACHHeaderType = typeof FIELD_TYPE[keyof typeof FIELD_TYPE];
+export type UACHHeaderField = Lowercase<typeof UACH_MAP[keyof typeof UACH_MAP]['field']>;
 export declare class UAClientHints {
-    private data;
-    constructor();
-    getValues(fields?: UACHDataField[]): Partial<Record<string, UACHDataType>>;
+    private architecture?;
+    private bitness?;
+    private brands?;
+    private formFactor?;
+    private fullVersionList?;
+    private mobile?;
+    private model?;
+    private platform?;
+    private platformVersion?;
+    private wow64?;
+    getValues(fields?: UACHDataField[]): UADataValues;
     getValuesAsHeaders(fields?: UACHDataField[]): Partial<Record<UACHHeaderField, string>>;
-    setValues(values?: Partial<Record<string, UACHDataType>>): UAClientHints;
+    setValues(values?: UADataValues): UAClientHints;
     setValuesFromUAParser(uap: UAParser.IResult): UAClientHints;
-    setValuesFromHeaders(headers: Partial<Record<UACHHeaderField, string>>): UAClientHints;
+    setValuesFromHeaders(headers: Record<string, string>): UAClientHints;
     private parseHeader;
     private serializeHeader;
     private isValidType;
 }
-export {};
